@@ -36,7 +36,7 @@
 
     <div class="tabs">
       <div v-for="tab in tabs.filter(a => a.component)" :class="{ active: activeTab === tab }">
-        <component :ref="'pluginTab_' + tab.name" v-if="tab.component" :is="tab.component"/>
+        <component :ref="'pluginTab_' + tab.name" v-if="activeTab === tab" :is="tab.component"/>
       </div>
       <div :class="{ active: activeTab.name === 'raw' }">
         <textarea ref="textInput" name="text" wrap="soft" v-model="data.content" :readonly="!editable"/>
@@ -137,24 +137,32 @@ export default {
       ...a.pluginInfo,
       component: a
     })))
-    let activeTabName = this.$store.state.localConfig['wiki.default_edit_mode']
+    let activeTabName = isMobile
+      ? 'raw'
+      : this.$store.state.localConfig['wiki.default_edit_mode']
     if(!this.tabs.some(a => a.name === activeTabName)) activeTabName = null
     activeTabName ??= isMobile ? 'raw' : this.tabs[0].name
     this.activeTab = this.tabs.find(a => a.name === activeTabName)
   },
   watch: {
-    activeTab(newValue, oldValue) {
+    async activeTab(newValue, oldValue) {
       if(!oldValue) return
 
       this.updateContent(oldValue)
 
+      // 플러그인 탭의 ref는 activeTab 변경과 같은 렌더 사이클에서는 아직 없을 수 있다.
+      // DOM 갱신 후 기존 문서 내용을 다시 전달해 빈 편집기로 초기화되는 것을 막는다.
+      await this.$nextTick()
+      if(this.activeTab !== newValue) return
+
+      this.syncTabContent(newValue)
+
       if(newValue.name === 'preview')
-        this.loadPreview()
+        await this.loadPreview()
     },
     'data.content'() {
-      if(this.activeTab.name === 'raw' || this.activeTab.name === 'preview') return
-      const activeComponent = this.getTabComponent(this.activeTab.name)
-      activeComponent.setValue(this.data.content)
+      if(this.activeTab?.name === 'raw' || this.activeTab?.name === 'preview') return
+      this.syncTabContent(this.activeTab)
     }
   },
   computed: {
@@ -182,9 +190,12 @@ export default {
       from ??= this.activeTab
 
       const fromComponent = this.getTabComponent(from.name)
-      const activeComponent = this.getTabComponent(this.activeTab.name)
 
       if(fromComponent) this.data.content = fromComponent.getValue()
+      this.syncTabContent(this.activeTab)
+    },
+    syncTabContent(tab) {
+      const activeComponent = this.getTabComponent(tab?.name)
       if(activeComponent && activeComponent.getValue() !== this.data.content)
         activeComponent.setValue(this.data.content)
     },

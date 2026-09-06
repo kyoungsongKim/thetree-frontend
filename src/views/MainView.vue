@@ -4,7 +4,7 @@
   <Toaster :theme="$store.state.currentTheme" :richColors="true"/>
 
   <GlobalEvents
-      :filter="e => !['INPUT', 'TEXTAREA'].includes(e.target.tagName)"
+      :filter="shouldHandleGlobalShortcut"
       @keydown.exact.prevent.a="gotoRandom"
       @keydown.exact.prevent.e="gotoEdit"
       @keydown.exact.prevent.d="gotoRecentDiscuss"
@@ -164,6 +164,14 @@ export default {
     }
   },
   methods: {
+    shouldHandleGlobalShortcut(event) {
+      const target = event.target
+      if(!target?.closest) return true
+
+      return !target.closest(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), .monaco-editor'
+      )
+    },
     updateThemeClass() {
       let theme = this.$store.state.localConfig['wiki.theme']
       if(!theme || theme === 'auto')

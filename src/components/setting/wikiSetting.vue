@@ -56,6 +56,15 @@
       <option :value="mode.name">{{mode.label}}</option>
     </template>
   </SettingItemSelect>
+  <SettingItemSelect
+      v-if="hasMonacoEditor"
+      label="편집기 툴바 색상"
+      ckey="editor.monaco.chrome_theme"
+      default="pink"
+  >
+    <option value="pink">핑크</option>
+    <option value="gray">기본 회색</option>
+  </SettingItemSelect>
   <SettingItemCheckbox :label="$t('components.wiki_setting.no_relative_date')" ckey="wiki.no_relative_date" />
 </template>
 <script>
@@ -89,6 +98,9 @@ export default {
           label: 'RAW 편집'
         }
       ]
+    },
+    hasMonacoEditor() {
+      return this.$store.state.thetreePlugins.editor.some(editor => editor.pluginInfo.name === 'monaco')
     },
     defaultEditMode() {
       return isMobile ? 'raw' : this.editModes[0].name
