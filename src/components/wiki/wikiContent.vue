@@ -50,6 +50,7 @@ import LocalDate from '@/components/localDate'
 import Common from '@/mixins/common'
 import { isMobile, sha256 } from '@/utils'
 import Modal from '@/components/modal'
+import twemoji from '@twemoji/api'
 
 export default {
   mixins: [Common],
@@ -148,6 +149,7 @@ export default {
       return [...element.getElementsByClassName('wiki-fn-content')]
     },
     async setupWikiContent(element = this.$refs.div) {
+      twemoji.parse(element, { folder: 'svg', ext: '.svg', base: '/emoji/' })
       {
         const imageHide = this.$store.state.localConfig['wiki.image_hide']
         const disableImageLazy = this.$store.state.localConfig['wiki.disable_image_lazy']
@@ -804,6 +806,14 @@ export default {
 
 :deep(.thetree-modal-container):focus {
   outline: 0 !important;
+}
+
+:deep(img.emoji) {
+  height: 1.2em;
+  width: 1.2em;
+  margin: 0 .05em 0 .1em;
+  vertical-align: -0.2em;
+  display: inline-block;
 }
 
 .thetree-modal-content .wiki-content {
